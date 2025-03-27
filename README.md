@@ -54,7 +54,7 @@ This approach minimizes the number of evaluations required while focusing the se
 - **Tunneling Function:**  
   The tunneling function is defined as:
   
-  $$T(x) = \frac{f(x) - f(x^*)}{\left[(x - x^*)'(x - x^*)\right]^\eta}$$ 
+  $T(x) = \frac{f(x) - f(x^*)}{\left[(x - x^*)'(x - x^*)\right]^\eta}$ 
 
   where:
   - $x^*$ is the current candidate minimum.
