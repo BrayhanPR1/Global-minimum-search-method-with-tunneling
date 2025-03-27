@@ -53,11 +53,12 @@ This approach minimizes the number of evaluations required while focusing the se
 
 - **Tunneling Function:**  
   The tunneling function is defined as:
-  
-  $T(x) = \frac{f(x) - f(x^*)}{\left[(x - x^*)'(x - x^*)\right]^\eta}$ 
+
+  $T(x) = \frac{f(x) - f(x^a)}{ (x - x^a)' (x - x^a)^{\eta} }   $ 
+
 
   where:
-  - $x^*$ is the current candidate minimum.
+  - $x^a$ is the current candidate minimum.
   - $\eta$ is a tunable constant that controls the tunneling aggressiveness.
   
 This mechanism allows the algorithm to explore both nearby and distant regions, ensuring that it does not remain confined to suboptimal solutions.
@@ -76,7 +77,7 @@ This mechanism allows the algorithm to explore both nearby and distant regions, 
   A parameter (ranging between 0 and 1) that determines the reduction in the sampling region’s size after each iteration. A balanced reduction is essential: too little reduction prevents convergence, whereas too much may not allow adequate search time.
 
 - **$\eta$:**  
-  A constant used in the tunneling function that influences the ability to escape local minima. Experimental results indicate that small variations (e.g., \(\eta = 1\) vs. \(\eta = 1.5\)) have a minor impact on the final outcome, maintaining both convergence speed and result quality.
+  A constant used in the tunneling function that influences the ability to escape local minima. Experimental results indicate that small variations (e.g., $\eta = 1$ vs. $\eta = 1.5$) have a minor impact on the final outcome, maintaining both convergence speed and result quality.
 
 ---
 
