@@ -54,7 +54,7 @@ This approach minimizes the number of evaluations required while focusing the se
 - **Tunneling Function:**  
   The tunneling function is defined as:
 
-  $T(x) = \frac{f(x) - f(x^a)}{ (x - x^a)' (x - x^a)^{\eta} }   $ 
+  $T(x) = \frac{f(x) - f(x^a)}{ \left[(x - x^a)' (x - x^a) \right]^{\eta} }   $ 
 
 
   where:
