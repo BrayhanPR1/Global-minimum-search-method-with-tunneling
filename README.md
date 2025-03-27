@@ -33,11 +33,11 @@ The algorithm presented in this repository addresses the challenge of finding th
 ### Base Algorithm (Monte Carlo Sampling)
 
 - **Idea:**  
-  The algorithm begins by launching a fixed number of particles, \(N\), randomly distributed over the search space.
+  The algorithm begins by launching a fixed number of particles, N, randomly distributed over the search space.
   
 - **Process:**  
-  1. **Sampling:** Deploy \(N\) particles across the entire search domain.
-  2. **Selection:** Evaluate the objective function for each particle and select the \(M\) particles that yield the lowest (best) values.
+  1. **Sampling:** Deploy N particles across the entire search domain.
+  2. **Selection:** Evaluate the objective function for each particle and select the M particles that yield the lowest (best) values.
   3. **Refinement:** Define a new sampling region (typically an N-dimensional hypercube) around the best particle or group of particles.
   4. **Iteration:** Repeat the sampling and selection process in the new, reduced region to refine the search further.
   
@@ -53,12 +53,12 @@ This approach minimizes the number of evaluations required while focusing the se
 
 - **Tunneling Function:**  
   The tunneling function is defined as:
-  \[
+  $$
   T(x) = \frac{f(x) - f(x^*)}{\left[(x - x^*)'(x - x^*)\right]^\eta}
-  \]
+  $$
   where:
-  - \(x^*\) is the current candidate minimum.
-  - \(\eta\) is a tunable constant that controls the tunneling aggressiveness.
+  - $x^*$ is the current candidate minimum.
+  - $\eta$ is a tunable constant that controls the tunneling aggressiveness.
   
 This mechanism allows the algorithm to explore both nearby and distant regions, ensuring that it does not remain confined to suboptimal solutions.
 
@@ -66,16 +66,16 @@ This mechanism allows the algorithm to explore both nearby and distant regions, 
 
 ## Parameters
 
-- **\(N\):**  
+- **N:**  
   The total number of particles launched in each sampling iteration. A higher \(N\) increases the exploration capability but also the computational cost.
 
-- **\(M\):**  
+- **M:**  
   The number of best-performing particles selected from the \(N\) samples. These particles are used to define the next sampling region.
 
-- **Size ite:**  
+- **Size_ite:**  
   A parameter (ranging between 0 and 1) that determines the reduction in the sampling region’s size after each iteration. A balanced reduction is essential: too little reduction prevents convergence, whereas too much may not allow adequate search time.
 
-- **\(\eta\):**  
+- **$\eta$:**  
   A constant used in the tunneling function that influences the ability to escape local minima. Experimental results indicate that small variations (e.g., \(\eta = 1\) vs. \(\eta = 1.5\)) have a minor impact on the final outcome, maintaining both convergence speed and result quality.
 
 ---
