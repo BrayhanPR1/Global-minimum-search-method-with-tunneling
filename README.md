@@ -1,97 +1,141 @@
-# Global-minimum-search-method-with-tunneling
-The algorithm searches for the global minimum by combining Monte Carlo techniques and tunneling. N random particles are launched, the M best are selected, and the sampling area is redefined. Tunneling allows escaping from local minima, ensuring rapid and robust convergence.
-# Global Minimum Search Method with Tunneling
+# Global Minimum Search with Monte Carlo and Tunneling
 
-This repository contains the implementation of a novel optimization algorithm for global minimum search that combines Monte Carlo sampling with a tunneling mechanism to escape local minima. The method is designed to be robust, fast, and parallelizable, making it suitable for applications where function evaluations are computationally expensive (e.g., radioastronomy).
+Este repositorio contiene la implementación de un optimizador estocástico paralelo que combina muestreo Monte Carlo y un mecanismo de tunelamiento para escapar de mínimos locales y converger hacia un mínimo global.
 
 ---
 
-## Table of Contents
+## Contenido del repositorio
 
-- [Overview](#overview)
-- [Algorithm Description](#algorithm-description)
-  - [Base Algorithm (Monte Carlo Sampling)](#base-algorithm-monte-carlo-sampling)
-  - [Tunneling Mechanism](#tunneling-mechanism)
-- [Parameters](#parameters)
-- [Usage Instructions](#usage-instructions)
-- [Customization and Modifications](#customization-and-modifications)
-- [Results and Discussion](#results-and-discussion)
-- [References](#references)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
+* `OptimizadorconMPIcorregido.py`
+  Implementación principal en Python usando `mpi4py` para paralelizar la evaluación de partículas.
+* `README.md`
+  Documentación del proyecto, instrucciones de uso y descripción del algoritmo.
 
 ---
 
-## Overview
+## Requisitos
 
-The algorithm presented in this repository addresses the challenge of finding the global minimum of complex functions, which typically have multiple local minima. By integrating a Monte Carlo-based sampling approach with a tunneling strategy, the algorithm effectively navigates the search space, reorienting its exploration when stagnation occurs. This results in a method that not only converges rapidly but is also stable under varying conditions.
+* Python 3.7 o superior
 
----
+* Librerías Python:
 
-## Algorithm Description
+  * `numpy`
+  * `mpi4py`
+  * `pickle` (opcional, para serialización de datos)
+  * `time`, `random` (librerías estándar de Python)
 
-### Base Algorithm (Monte Carlo Sampling)
-
-- **Idea:**  
-  The algorithm begins by launching a fixed number of particles, N, randomly distributed over the search space.
-  
-- **Process:**  
-  1. **Sampling:** Deploy N particles across the entire search domain.
-  2. **Selection:** Evaluate the objective function for each particle and select the M particles that yield the lowest (best) values.
-  3. **Refinement:** Define a new sampling region (typically an N-dimensional hypercube) around the best particle or group of particles.
-  4. **Iteration:** Repeat the sampling and selection process in the new, reduced region to refine the search further.
-  
-This approach minimizes the number of evaluations required while focusing the search in promising areas.
-
-### Tunneling Mechanism
-
-- **Purpose:**  
-  To overcome the common problem of algorithms getting trapped in local minima.
-  
-- **Mechanism:**  
-  When the standard sampling process fails to produce a better candidate, a tunneling function is activated. This function reorients the search towards new regions by “tunneling” through barriers formed by local minima.
-
-- **Tunneling Function:**  
-  The tunneling function is defined as:
-
-  $T(x) = \frac{f(x) - f(x^a)}{ \left[(x - x^a)' (x - x^a) \right]^{\eta} }   $ 
-
-
-  where:
-  - $x^a$ is the current candidate minimum.
-  - $\eta$ is a tunable constant that controls the tunneling aggressiveness.
-  
-This mechanism allows the algorithm to explore both nearby and distant regions, ensuring that it does not remain confined to suboptimal solutions.
+* Entorno MPI instalado (por ejemplo, OpenMPI o MPICH).
 
 ---
 
-## Parameters
+## Instalación
 
-- **N:**  
-  The total number of particles launched in each sampling iteration. A higher \(N\) increases the exploration capability but also the computational cost.
+1. Clonar el repositorio:
 
-- **M:**  
-  The number of best-performing particles selected from the \(N\) samples. These particles are used to define the next sampling region.
-
-- **Size_ite:**  
-  A parameter (ranging between 0 and 1) that determines the reduction in the sampling region’s size after each iteration. A balanced reduction is essential: too little reduction prevents convergence, whereas too much may not allow adequate search time.
-
-- **$\eta$:**  
-  A constant used in the tunneling function that influences the ability to escape local minima. Experimental results indicate that small variations (e.g., $\eta = 1$ vs. $\eta = 1.5$) have a minor impact on the final outcome, maintaining both convergence speed and result quality.
-
----
-
-## Usage Instructions
-
-### Prerequisites
-
-- **Git:** To clone the repository.
-- **Python 3:** The main implementation is provided in a Jupyter Notebook.
-- **Required Libraries:** Check the notebook (`optimizaciónmontecarlo.ipynb`) for dependencies such as `numpy`, `matplotlib`, etc.
-
-### Steps to Run
-
-1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/BrayhanPR1/Global-minimum-search-method-with-tunneling.git
+   git clone <URL-del-repositorio>
    cd Global-minimum-search-method-with-tunneling
+   ```
+2. Crear y activar un entorno virtual (opcional):
+
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   venv\\Scripts\\activate  # Windows
+   ```
+3. Instalar dependencias:
+
+   ```bash
+   pip install numpy mpi4py
+   ```
+
+---
+
+## Descripción del Algoritmo
+
+1. **Muestreo inicial**
+
+   * Se generan `N` partículas con posiciones aleatorias dentro de un dominio $N$-dimensional.
+   * Cada partícula evalúa la función objetivo y se ordenan por valor.
+   * Se seleccionan las `M` mejores partículas para definir regiones de interés.
+
+2. **Paralelización MPI**
+
+   * El proceso raíz (rank 0) reparte las `M` partículas y los límites de muestreo (`rangite`) a cada proceso usando `MPI_Scatter`.
+   * Cada proceso genera `N` nuevas muestras alrededor de su partícula asignada (distribución uniforme o normal).
+   * Se recogen los resultados con `MPI_Gather` y la raíz consolida los mejores de cada zona.
+   * El dominio de muestreo se reduce multiplicando `rangite *= (1 - zone_size)` y se repite el ciclo.
+
+3. **Túnel de mínimos locales**
+
+   * Tras cada fase de muestreo, si el mejor valor no mejora significativamente, se activa la fase de tunelamiento.
+   * Se define una función auxiliar:
+
+     $$
+     T(x) = \frac{f(x) - f(x^*)}{\prod_{x_min\in\text{historial}} \|x - x_min\|^{2\eta}},
+     $$
+
+     donde $x^*$ es el último mínimo encontrado y $\eta$ controla la agresividad.
+   * Se buscan candidatos que reduzcan $T(x)$ por debajo de cero para escapar de la trampa local.
+
+4. **Estructura de clases**
+
+   * `Particle`: almacena posición, valor y zona.
+   * `TunnelingOptimizer`: coordina ciclos de búsqueda (`minimize_phase`) y tunelamiento (`tunneling_phase`).
+
+---
+
+## Parámetros de ejecución
+
+| Parámetro   | Descripción                                                           | Valor por defecto |
+| ----------- | --------------------------------------------------------------------- | ----------------- |
+| `cycles`    | Número total de ciclos de muestreo y tunelamiento                     | 50                |
+| `N`         | Número de partículas a generar por ciclo                              | 100               |
+| `M`         | Número de partículas seleccionadas y distribuidas entre procesos      | `size` (núcleos)  |
+| `distrib`   | Tipo de distribución: `"uniforme"` o `"normal"`                       | "uniforme"        |
+| `zone_size` | Fracción del dominio original usada para definir regiones de muestreo | 0.35              |
+| `eta`       | Exponente en la función de tunelamiento                               | 2.0               |
+| `tol`       | Tolerancia mínima de mejora para considerar un nuevo mínimo           | 1e-6              |
+
+---
+
+## Ejecución
+
+Para ejecutar el optimizador con 8 procesos:
+
+```bash
+mpiexec -n 8 python OptimizadorconMPIcorregido.py
+```
+
+El script imprimirá el tiempo de ejecución de cada ciclo y el tiempo medio tras completar todas las iteraciones.
+
+---
+
+## Ejemplo de salida
+
+```
+Tiempo de ejecusión en el ciclo: 0.28760576248168945
+Tiempo de ejecusión en el ciclo: 0.2751939296722412
+...  
+Tiempo de ejecusión promedio: 0.281 s  
+```
+
+---
+
+## Resultados esperados
+
+* Reducción de tiempo de cómputo de aproximadamente 1/8 al paralelizar en 8 núcleos frente a la versión secuencial.
+* Escalabilidad lineal al aumentar el número de partículas.
+
+---
+
+## Licencia
+
+Este proyecto está bajo la licencia MIT. Véase `LICENSE` para más detalles.
+
+---
+
+## Agradecimientos
+
+* MPI Forum por la especificación del estándar MPI.
+* `mpi4py` por facilitar la integración de MPI con Python.
